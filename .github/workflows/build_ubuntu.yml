@@ -1,41 +1,54 @@
-container:
-  image: ubuntu:20.04 # 使用 Ubuntu 20.04 作为基础镜像
+name: Build Linux 4.15 Kernel on Ubuntu 24.04
 
-steps:
-  - name: Update and Install Dependencies in Container
-    run: |
-      apt update
-      apt install -y build-essential libncurses-dev bison flex libssl-dev libelf-dev bc wget tar
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
 
-  - name: Checkout Kernel Source
-    run: |
-      wget https://mirrors.edge.kernel.org/pub/linux/kernel/v4.x/linux-4.15.tar.xz
-      tar -xf linux-4.15.tar.xz
-      cd linux-4.15
+jobs:
+  build:
+    runs-on: ubuntu-latest # 仍然使用 GitHub Actions 提供的 Ubuntu runner
 
-  - name: Configure Kernel
-    run: |
-      cd linux-4.15
-      make defconfig
-      make olddefconfig
+    container:
+      image: ubuntu:20.04 # 指定 Docker 镜像
 
-  - name: Build Kernel
-    run: |
-      cd linux-4.15
-      make -j$(nproc)
+    steps:
+      - name: Update and Install Dependencies in Container
+        run: |
+          apt update
+          apt install -y build-essential libncurses-dev bison flex libssl-dev libelf-dev bc wget tar
 
-  - name: Build Modules
-    run: |
-      cd linux-4.15
-      sudo make modules_install
+      - name: Checkout Kernel Source
+        run: |
+          wget https://mirrors.edge.kernel.org/pub/linux/kernel/v4.x/linux-4.15.tar.xz
+          tar -xf linux-4.15.tar.xz
+          cd linux-4.15
 
-  - name: Package Kernel
-    run: |
-      cd linux-4.15
-      make deb-pkg
+      - name: Configure Kernel
+        run: |
+          cd linux-4.15
+          make defconfig
+          make olddefconfig
 
-  - name: Upload Artifacts
-    uses: actions/upload-artifact@v3
-    with:
-      name: kernel-packages
-      path: linux-4.15/*.deb
+      - name: Build Kernel
+        run: |
+          cd linux-4.15
+          make -j$(nproc)
+
+      - name: Build Modules
+        run: |
+          cd linux-4.15
+          sudo make modules_install
+
+      - name: Package Kernel
+        run: |
+          cd linux-4.15
+          make deb-pkg
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: kernel-packages
+          path: linux-4.15/*.deb
