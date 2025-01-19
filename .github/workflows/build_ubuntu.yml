@@ -1,0 +1,52 @@
+name: Build Linux 4.15 Kernel on Ubuntu 24.04
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Update and Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential libncurses-dev bison flex libssl-dev libelf-dev bc
+
+      - name: Checkout Kernel Source
+        run: |
+          wget https://mirrors.edge.kernel.org/pub/linux/kernel/v4.x/linux-4.15.tar.xz
+          tar -xf linux-4.15.tar.xz
+          cd linux-4.15
+
+      - name: Configure Kernel
+        run: |
+          cd linux-4.15
+          make defconfig
+          make menuconfig
+          make olddefconfig
+
+      - name: Build Kernel
+        run: |
+          cd linux-4.15
+          make -j$(nproc)
+
+      - name: Build Modules
+        run: |
+          cd linux-4.15
+          sudo make modules_install
+
+      - name: Package Kernel (推荐生成可安装的包)
+        run: |
+          cd linux-4.15
+          make deb-pkg
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: kernel-packages
+          path: linux-4.15/*.deb
