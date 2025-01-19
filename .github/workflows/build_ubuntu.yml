@@ -27,7 +27,6 @@ jobs:
         run: |
           cd linux-4.15
           make defconfig
-          make olddefconfig
 
       - name: Build Kernel
         run: |
