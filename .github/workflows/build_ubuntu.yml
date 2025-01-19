@@ -35,6 +35,8 @@ jobs:
       - name: Build Kernel
         run: |
           cd linux-4.15
+          export CC=gcc-7
+          export CXX=g++-7
           make -j$(nproc)
 
       - name: Build Modules
